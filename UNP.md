@@ -1,5 +1,5 @@
-## UNP Note
-### Socket
+# UNP Note
+## Socket
 
 ```c
 #include <netinet/in.h>
@@ -38,9 +38,9 @@ struct sockaddr {
 ```c
 #include <netinet/in.h>
 uint16_t htons(uint16_t host16bitvalue)
-uint32_t htonl(uint32_t host16bitvalue)
-uint16_t ntohs(uint16_t host16bitvalue)
-uint32_t ntohl(uint32_t host16bitvalue)
+uint32_t htonl(uint32_t host32bitvalue)
+uint16_t ntohs(uint16_t net16bitvalue)
+uint32_t ntohl(uint32_t net32bitvalue)
 ```
 
 ```c
@@ -68,7 +68,7 @@ where 'family' is AF_INET AF_INET6
 #define INET6_ADDRSTRLEN 46
 ```
 
-### Tcp Socket
+## Tcp Socket
 
 ```c
 #include <sys/socket.h>
@@ -100,14 +100,14 @@ int pselect(int maxfdpl, fd_set *readset, fd_set *writeset, fd_set *exceptset, c
 
 #include <poll.h>
 int poll(struct pollfd *fdarray, unsigned long nfds, int timeout)
-    struct pollfd {
-        int fd;
-        short events;
-        short revents;
-    }
+struct pollfd {
+    int fd;
+    short events;
+    short revents;
+}
 ```
 
-### Socket Options
+## Socket Options
 
 ```c
 #include <sys/socket.h>
@@ -167,3 +167,45 @@ where 'optname' is:
 - TCP_MAXSEG    获取和设置MSS
 - TCP_NODELAY   禁止Nagle算法
 ~~~
+
+## UDP Socket
+```c
+#include <sys/socket.h>
+ssize recvfrom(int sockfd, void *buff, size_t nbytes, int flags, struct sockaddr *from, socklen_t *addlen)
+ssize sendto(int sockfd, void *buff, size_t nbytes, int flags, const struct sockaddr *to, socklen_t *addlen)
+```
+
+## DNS
+```c
+#include <netdb.h>
+struct hostent *gethostbyname(const char *hostname) /* only fuction for IPv4 */
+struct hostent {
+    char *h_name;
+    char **h_aliases;
+    int h_addrtype;
+    int h_length;
+    char **h_addr_list;
+}
+struct hostent *gethostbyaddr(const char *addr, socklen_t len, int family) /* only fuction for IPv4 */
+struct servent *getservbyname(const char *servname, const char *protoname)
+struct servent {
+    char *s_name;
+    char *s_aliases;
+    int s_port; /* network byte order */
+    char *s_proto;
+}
+struct servent *getservbyport(int port, const char *protoname)
+
+int getaddrinfo(const char *hostname, const char *service,
+		const struct addrinfo *hints, struct addrinfo **result)
+struct addrinfo {
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    int ai_addrlen;
+    char *ai_canonname;
+    struct sockaddr *ai_addr;
+    struct addrinfo *ai_next;
+}
+```

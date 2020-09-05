@@ -468,3 +468,30 @@ pid_t tcgetsid(int fd)
 ```
 
 ### Signal Controller
+```c
+#include <signal.h>
+void (*signal(int signo, void (*func)(int)))(int)
+where 'signo' is signal, 'func' is SIG_IGN SIG_DFL or a function pointor
+int kill(pid_t pid, int signo)
+int raise(int signo)
+
+#include <unistd.h>
+unsigned int alarm(unsigned int seconds)
+int pause(void)
+
+#include <signal.h>
+int sigemptyset(sigset_t *set)
+int sigfillset(sigset_t *set)
+int sigaddset(sigset_t *set, int signo)
+int sigdelset(sigset_t *set, int signo)
+int sigismember(const sitset_t *set, int signo)
+int sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oset)
+where 'how' is SIG_BLOCK SIG_UNBLOCK SIG_SETMASK
+int sigaction(int signo, const struct sigaction *restrict act, struct sigaction *restrict oact)
+struct sigaction {
+    void (*sa_handler)(int);
+    sigset_t sa_mask;
+    int sa_flags;
+    void (*sa_sigaction)(int signo, siginfo_t *info, void *context)
+}
+```
