@@ -3,11 +3,13 @@
 ### Error Option
 
 ```c
+// 根据错误代码 (errno) 返回错误信息
 #include <string.h>
 char *strerror(int errnum)
 ```
 
 ```c
+// 同上，并附加提供的 msg
 #include <stdio.h>
 void perror(const char *msg)
 ```
@@ -15,56 +17,68 @@ void perror(const char *msg)
 ### File Operation
 
 ```c
+// 打开文件
 #include <fcntl.h>
 int open(const char *path, int Oflag, .../* mode_t mode */)
 int openat(int fd, const char *path, int Oflag, .../* mode_t mode */)
+当'fd'是AT_FDCWD时,path是相对路径,否则path是相对于打开目录(fd)的路径
 where 'Oflag' is: O_RDYNLY O_WRONLY O_RDWR O_EXEC O_SEARCH O_APPEND
 O_CLOEXEC O_CREAT O_NOCTTY O_NOFOLLOW O_NONBLOCK O_SYNC O_TRUNC O_TTY_INIT
 O_DSYNC O_RSYNC
 ```
 
 ```c
+// 创建文件，没特殊需要建议使用 open()
 #includs <fcntl.h>
 int creat(const char *path, mode_t mode)
 ```
 
 ```c
+// 关闭文件
 #include <unistd.h>
 int close(int fd)
 ```
 
 ```c
+// 设置当前文件偏移量
 #include <unistd.h>
 off_t lseek(int fd, off_t offset, int whence)
 where 'whence' is SEEK_SET SEEK_CUR SEEK_END
 ```
 
 ```c
+// 无缓冲读写文件
 #include <unistd.h>
 ssize_t read(int fd, void *buf, size_t nbytes)
 ssize_t write(int fd, void *buf, size_t nbytes)
 ```
 
 ```c
+// 无缓冲读写文件(原子操作)
 #include <unistd.h>
-ssize_t pread(int fd, void *buf, size_t nbytes)
-ssize_t pwrite(int fd, void *buf, size_t nbytes)
+ssize_t pread(int fd, void *buf, size_t nbytes, off_t offset)
+ssize_t pwrite(int fd, void *buf, size_t nbytes, off_t offset)
 ```
 
 ```c
+// 复制文件描述符
 #include <unistd.h>
 int dup(int fd)
 int dup2(int fd, int fd2)
 ```
 
 ```c
+// 将延迟写的数据同步到磁盘
 #include <unistd.h>
+// 下述俩函数保证已修改的块写回到磁盘再返回
 int fsync(int fd)
 int fdatasync(int fd)
+// 这个函数只是将修改过的块缓存区排入写队列
 void sync(void)
 ```
 
 ```c
+// 改变文件属性
 #include <fcntl.h>
 int fcntl(int fd, int cmd, .../* int arg */)
 where 'cmd' is
@@ -75,37 +89,82 @@ F_GETOWN F_SETOWN
 F_GETLK F_SETLK F_SETLKW
 ```
 
+```c
+// 各种 I/O 操作
+#include <unistd.h>
+#include <sys/ioctl.h>
+int ioctl(int fd, int request, ...)
+```
+
 ### File and Dir
 
 ```c
+// 文件的相关属性
 #include <sys/stat.h>
 int stat(const char *restrict pathname, struct stat *restrict buf)
 int fstat(int fd, struct stat *buf)
+// 符号文件的相关属性
 int lstat(consts char *restrict pathname, struct stat *restrict buf)
 int fstatat(int fd, const char *restrict pathname, struct stat *restrict buf, int flag)
 where 'flag' is AT_SYMLINK_NOFOLLOW
+
+struct stat {
+              dev_t     st_dev;         /* ID of device containing file */
+              ino_t     st_ino;         /* Inode number */
+              mode_t    st_mode;        /* File type and mode */
+              nlink_t   st_nlink;       /* Number of hard links */
+              uid_t     st_uid;         /* User ID of owner */
+              gid_t     st_gid;         /* Group ID of owner */
+              dev_t     st_rdev;        /* Device ID (if special file) */
+              off_t     st_size;        /* Total size, in bytes */
+              blksize_t st_blksize;     /* Block size for filesystem I/O */
+              blkcnt_t  st_blocks;      /* Number of 512B blocks allocated */
+
+              /* Since Linux 2.6, the kernel supports nanosecond
+                 precision for the following timestamp fields.
+                 For the details before Linux 2.6, see NOTES. */
+
+              struct timespec st_atim;  /* Time of last access */
+              struct timespec st_mtim;  /* Time of last modification */
+              struct timespec st_ctim;  /* Time of last status change */
+
+          #define st_atime st_atim.tv_sec      /* Backward compatibility */
+          #define st_mtime st_mtim.tv_sec
+          #define st_ctime st_ctim.tv_sec
+          };
+S_ISUID() // 设置用户ID位
+S_ISGID() // 这是组ID位
 ```
+![APUE-file-type-mecro](./APUE-file-type-mecro.png)
+![APUE-file-type-mecro-plus](./APUE-file-type-mecro-plus.png)
+![APUE-file-access-permission](./APUE-file-access-permission.png)
 
 ```c
+// 文件权限测试(按实际用户ID和实际组ID测试)
 #include <unistd.h>
 int access(const char *pathkame, int mode)
 int faccessat(int fd, const char *pathname, int mode, int flag)
 where 'mode' is R_OK W_OK X_OK
+当'flag'为AT_EACCESS时按有效用户ID和有效组ID测试
 ```
 
 ```c
+// 创建文件模式屏蔽字,屏蔽字被设置，创建的文件的相应位一定被关闭
 #include <unistd.h>
 mode_t umask(mode_t cmask)
 ```
 
 ```c
+// 更改现有文件的访问权限
 #include <sys/stat.h>
 int chmod(const char *pathname, mode_t mode)
 int fchmod(int fd, mode_t mode)
 int fchmodat(int fd, const char *pathname, mode_t mode, int flag)
+当'flag'为AT_SYMLINK_NOFOLLOW时，'fchmodat'不会跟随符号链接
 ```
 
 ```c
+// 更改文件的用户ID和组ID
 #include <sys/stat.h>
 int chown(const char *pathname, uid_t owner, gid_t group)
 int fchown(int fd, uid_t owner, gid_t group)
@@ -114,6 +173,7 @@ int lchown(const char *pathname, uid_t owner, gid_t group)
 ```
 
 ```c
+// 截断文件
 #include <unistd.h>
 int truncate(const char *pathname, off_t length)
 int ftruncate(int fd, off_t length)
