@@ -1,6 +1,9 @@
 # UNP Note
-## Socket
 
+## Preface
+同上一篇Unix高级环境编程篇一样，我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
+
+## Socket
 ```c
 #include <netinet/in.h>
 struct sockaddr_in {

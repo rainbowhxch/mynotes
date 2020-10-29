@@ -1,6 +1,6 @@
-## APUE NOTE
+# APUE NOTE
 
-### Error Option
+## Error Option
 
 ```c
 // 根据错误代码 (errno) 返回错误信息
@@ -14,7 +14,7 @@ char *strerror(int errnum)
 void perror(const char *msg)
 ```
 
-### File Operation
+## File Operation
 
 ```c
 // 打开文件
@@ -96,7 +96,7 @@ F_GETLK F_SETLK F_SETLKW
 int ioctl(int fd, int request, ...)
 ```
 
-### File and Dir
+## File and Dir
 
 ```c
 // 文件的相关属性
@@ -135,9 +135,9 @@ struct stat {
 S_ISUID() // 设置用户ID位
 S_ISGID() // 这是组ID位
 ```
-![APUE-file-type-mecro](./APUE-file-type-mecro.png)
-![APUE-file-type-mecro-plus](./APUE-file-type-mecro-plus.png)
-![APUE-file-access-permission](./APUE-file-access-permission.png)
+![APUE-file-type-macro](http://www.rainbowch.net/resource/APUE-file-type-macro.png)
+![APUE-file-type-macro-plus](http://www.rainbowch.net/resource/APUE-file-type-macro-plus.png)
+![APUE-file-access-permission](http://www.rainbowch.net/resource/APUE-file-access-permission.png)
 
 ```c
 // 文件权限测试(按实际用户ID和实际组ID测试)
@@ -180,60 +180,76 @@ int ftruncate(int fd, off_t length)
 ```
 
 ```c
+// 创建/删除一个指向已存在的i节点的目录项
 #include <unistd.h>
 int link(const char *existingpath, const char *newpath)
-int linkat(int fd, const char *existingpath, int nfd, const char *newpath)
+int linkat(int efd, const char *existingpath, int nfd, const char *newpath, int flag) // 'flag' 为AT_SYMLINK_FOLLOW时，新链接指向符号链接本身
 int unlink(const char *pathname)
-int unlinkat(int fd, const char *pathname, int flag)
-where 'flag' is AT_REMOVEDIR
+int unlinkat(int fd, const char *pathname, int flag) // where 'flag' can be 'AT_REMOVEDIR', 此时相当于rmdir操作
 ```
 
 ```c
+// 解除对文件或目录的链接
 #include <stdio.h>
 int remove(const char *pathname)
 ```
 
 ```c
+// 重命名文件或目录
 #include <stdio.h>
 int rename(const char *oldname, const char *newname)
 int renameat(int oldfd, const char *oldname, int newfd, const char *newname)
 ```
 
+![APUE-symlink-situation](http://www.rainbowch.net/resource/APUE-symlink-situation.png)
 ```c
+// 创建符号链接
 #include <unistd.h>
 int symlink(const char *actualpath, const char *sympath)
 int symlinkat(const char *actualpath, int fd, const char *sympath)
 ```
 
 ```c
+// 读取符号链接中的文件或目录名
 #include <unistd.h>
 ssize_t readlink(const char *restrict pathname, char *restrict buf, size_t bufsize)
 ssize_t readlinkat(int fd, const char *restrict pathname, char *restrict buf, size_t bufsize)
 ```
 
 ```c
+// 修改文件的访问和修改时间
 #include <sys/stat.h>
 int futimens(int fd, const strust timespec times[2])
 int utimensat(int fd, const char *path, const strust timespec times[2], int flag)
 ```
+![APUE-file-time](http://www.rainbowch.net/resource/APUE-file-time.png)
 
 ```c
+// 修改文件的访问和修改时间
 #include <sys/time.h>
 int utimes(const char *pathname, const struct timeval times[2])
+
+struct timeval {
+    time_t tv_sec; /* seconds */
+    long tv_usec; /* microseconds */
+}
 ```
 
 ```c
+// 创建空目录
 #include <sys/stat>
 int mkdir(const char *pathname, mode_t mode)
 int mkdirat(int fd, const char *pathname, mode_t mode)
 ```
 
 ```c
+// 删除空目录
 #include <unistd.h>
 int rmdir(const char *pathname)
 ```
 
 ```c
+// 读目录
 #include <dirent.h>
 DIR *opendir(const char *pathname)
 DIR *fdopendir(int fd)
@@ -245,51 +261,91 @@ void seekdir(DIR *dp, long loc)
 ```
 
 ```c
+// 更改当前工作目录
 #include <unistd.h>
 int chdir(const char *pathname)
 int fchdir(int fd)
+// 获取当前工作目录
 char *getcwd(char *buf, size_t size)
 ```
+![APUE-file-access-permission-summry.png](http://www.rainbowch.net/resource/APUE-file-access-permission-summry.png)
 
-### ISO/IO
-
+## ISO/IO (标准I/O库)
 ```c
+// 设置流的定向(只作用于未定向的流)
 #include <stdio.h>
-void setbuf(FILE *restrict fp, char *restrict buf)
-void setvbuf(FILE *restrict fp, char *restrict buf, int mode, size_t size)
-where 'mode' ir _IOFBF _IOLBF _IONBF
-
-int fflush(FILE *fp)
+#include <wchar.h>
+int fwide(FILE *fp, int mode)
+'mode' 为负，试图使指定的流设置为单定向的
+'mode' 为正，试图使指定的流设置为宽定向的
+'mode' 为0，不设置流定向，但返回流定向的值
 ```
 
+![APUE-buffer-type](http://www.rainbowch.net/resource/APUE-buffer-type.png)
+![APUE-buffer-type2](http://www.rainbowch.net/resource/APUE-buffer-type2.png)
+```c
+// 更改流的缓冲类型
+#include <stdio.h>
+void setbuf(FILE *restrict fp, char *restrict buf) // 为了带缓冲进行I/O，参数buf必须指向一个长度为BUFSIZ(定义在<stdio.h>中)的缓冲区
+void setvbuf(FILE *restrict fp, char *restrict buf, int mode, size_t size)
+where 'mode' is _IOFBF(全缓冲) _IOLBF(行缓冲) _IONBF(不带缓冲)
+
+// 冲洗一个流，即将缓冲区的内容写到磁盘上
+int fflush(FILE *fp)
+```
+![APUE-setbuf-setvbuf](http://www.rainbowch.net/resource/APUE-setbuf-setvbuf.png)
+
 ```c
 #include <stdio.h>
+// 打开一个标准I/O流
 FILE *fopen(const char *restrict pathname, const char *restrict type)
+// 在一个指定的流上打开指定的文件
 FILE *freopen(const char *restrict pathname, const char *restrict type, FILE *restrict fd)
+// 获得与文件描述符相结合的标准I/O流
 FILE *fdopen(int fd, const char *type)
+// 关闭流
+int fclose(FILE *fp)
+```
+![APUE-fopen-type](http://www.rainbowch.net/resource/APUE-fopen-type.png)
 
+```c
+// 读写一个字符
 int getc(FILE *fp)
 int putc(int c, FILE *fp)
 int fgetc(FILE *fp)
 int fputc(int c, FILE *fp)
 int getchar(void)
 int putchar(int c)
+// 判断I/O是否出错
 int ferror(FILE *fp)
+// 判断I/O是否到达EOF
 int feof(FILE *fp)
+// 清除文件出错标志和文件结束标志
 void clearerr(FILE *fp)
+// 将字符再压送回流中
 int ungetc(int c, FILE *fp)
+```
 
+```c
+// 读写一行
 char *fgets(char *restrict buf, int n, FILE *restrict fp)
 char *gets(char *buf)
 char *fputs(char *restrict str, FILE *restrict fp)
 char *puts(const char *str)
+```
 
+```c
+// 二进制I/O
 size_t fread(void *restrict ptr, size_t size, size_t nobj, FILE *restrict fp)
 size_t fwrite(const void *restrict ptr, size_t size, size_t nobj, FILE *restrict fp)
 
+// 获取文件偏移量
 long ftell(FILE *fp)
+// 设置文件偏移量
 int fseek(FILE *fp, long offset, int whence)
+// 设置文件偏移量为0
 void rewind(FILE *fp)
+// 同上，但依靠off_t 数据类型实现
 off_t ftello(FILE *fp)
 int fseeko(FILE *fp, off_t offset, int whence)
 int fgetpos(FILE *restrict fp, fpos_t *restrict pos)
@@ -297,6 +353,7 @@ int fgetpos(FILE *fp, const fpos_t *pos)
 ```
 
 ```c
+// 格式化输出
 #include <stdio.h>
 int printf(const char *restrict format, ...)
 int fprintf(FILE *fp, const char *restrict format, ...)
@@ -314,6 +371,7 @@ int vsnprintf(char *restrict buf, size_t n, const char *restrict format, va_list
 ```
 
 ```c
+// 格式化输入
 #include <stdio.h>
 int scanf(const char *restrict format, ...)
 int fscanf(FILE *restrict fp, const char *restrict format, ...)
@@ -327,37 +385,57 @@ int vsscanf(const char *restrict buf, const char *restrict format, va_list arg)
 ```
 
 ```c
+// 获得与标准I/O流相关联的文件描述符
 #include <stdio.h>
-int fileno(FILE *fp)    //get 'fd'
-char *tmpnam(char *ptr) //get temp file name
-FILE *tmpfile(void)     //get temp file fp
+int fileno(FILE *fp)    // get 'fd'
+// 创建临时文件名
+char *tmpnam(char *ptr) // ptr: temp file name, ptr指向的数组长度至少应该为L_timpnam(定义在<stdio.h>中)
+// 创建临时文件
+FILE *tmpfile(void)     // get temp file fp
 
 #include <stdlib.h>
-char *mkdtemp(char *template)   //get temp dir
-int mkftemp(char *template)     //get temp file
+// 创建临时目录
+char *mkdtemp(char *template)   // 返回指向目录名的指针
+// 创建临时文件
+int mkftemp(char *template)     // 返回文件描述符
 where 'template' is a path like '/some/path/××××××'
 ```
 
 ```c
+// 创建内存流
 #include <stdio.h>
 FILE *fmemopen(void *restrict buf, size_t size, const char *restrict type)
-FILE *open_memstream(char **bufp, size_t *sizep)
+FILE *open_memstream(char **bufp, size_t *sizep) // 面向字节
+#include <wchar.h>
+FILE *open_wmemstream(char **bufp, size_t *sizep) // 面向宽字节
 ```
-### System Data File
+
+## System Data File
+![APUE-passwd-struct](http://www.rainbowch.net/resource/APUE-passwd-struct.png)
 ```c
 #include <pwd.h>
+// 获取指定口令文件项
 struct passwd *getpwuid(uid_t uid)
 struct passwd *getpwnam(const char *name)
+// 迭代获取所有口令文件项
 struct passwd *getpwent(void)   //get next 'passwd' entry
+// 反饶读取的口令文件
 void setpwent(void)             //reset the passwd file
+// 关闭读取的口令文件
 void endpwent(void)             //end 'getpwent'
+```
 
+![APUE-shadow-struct](http://www.rainbowch.net/resource/APUE-shadow-struct.png)
+```c
 #include <shadow.h>
 struct spwd *getspnam(const char *name)
 struct spwd *getspent(void)   //get next 'shadow' entry
 void setspent(void)             //reset the shadow file
 void endspent(void)             //end 'getspent'
+```
 
+![APUE-group-struct](http://www.rainbowch.net/resource/APUE-group-struct.png)
+```c
 #include <grp.h>
 struct group *getgrgid(gid_t gid)
 struct group *getgrnam(const char *name)
@@ -366,10 +444,12 @@ void setgrent(void)             //reset the group file
 void endgrent(void)             //end 'getgrent'
 
 #include <unistd.h>
-int getgroups(int gidsetsize, gid_t grouplist[])
+// 获取附属组ID
+int getgroups(int gidsetsize, gid_t grouplist[]) // 最多填写gidsetsize个，返回实际填写个数
 
 #include <grp.h>
 #include <unistd.h>
+// 设置附属组ID
 int setgroups(int ngroups, const gid_t grouplist[])
 
 #include <grp.h>
@@ -382,23 +462,52 @@ int initgroups(const char *username, git_t basegid)
 /etc/protocols  <netdb.h>   protent getporotobyname getprotobynumber
 /etc/services   <netdb.h>   servent getservbyname   getservbyport
 ```
+![APUE-system-data-summry](http://www.rainbowch.net/resource/APUE-system-data-summry.png)
 
 ```c
 #include <sys/usname.h>
+// 获取与主机和操作系统相关的信息
 int uname(struct usname *name)
+struct utsname {
+    char sysname[];    /* Operating system name (e.g., "Linux") */
+    char nodename[];   /* Name within "some implementation-defined
+                         network" */
+    char release[];    /* Operating system release (e.g., "2.6.28") */
+    char version[];    /* Operating system version */
+    char machine[];    /* Hardware identifier */
+    #ifdef _GNU_SOURCE
+    char domainname[]; /* NIS or YP domain name */
+    #endif
+};
 
+// 获取主机名
 #include <unistd.h>
 int gethostname(char *name, int namelen)
 ```
 
 ```c
 #include <time.h>
+// 返回UTC时间
 time_t time(time_t *calptr)
+// 将日历时间转换成分解的时间
 struct tm *gmtime(const time_t *calptr)
 struct tm *localtime(const time_t *calptr)
+struct tm {
+    int tm_sec;    /* Seconds (0-60) */
+    int tm_min;    /* Minutes (0-59) */
+    int tm_hour;   /* Hours (0-23) */
+    int tm_mday;   /* Day of the month (1-31) */
+    int tm_mon;    /* Month (0-11) */
+    int tm_year;   /* Year - 1900 */
+    int tm_wday;   /* Day of the week (0-6, Sunday = 0) */
+    int tm_yday;   /* Day in the year (0-365, 1 Jan = 0) */
+    int tm_isdst;  /* Daylight saving time */
+};
 
+// 将tm转换成time_t
 time_t mktime(struct tm *tmptr)
 
+// 格式化输出时间至相应字符串
 size_t strftime(char *restrict buf, size_t maxsize,
                 const char *restrict format,
                 const struct tm *restrict tmptr)
@@ -409,62 +518,83 @@ char *strptime(const char *restrict buf, const char *restrict format,
                 const struct tm *restrict tmptr)
 
 #include <sys/time.h>
+// 返回相应时钟类型的精确时间
 int clock_gettime(clockid_t clock_id, struct timespec *tsp)
+// 返回相应时钟类型的精度
 int clock_getres(clockid_t clock_id, struct timespec *tsp)
+// 设置相应时钟类型的精确时间
 int clock_settime(clockid_t clock_id, struct timespec *tsp)
 where 'clock_id' is CLOCK_REALTIME CLOCK_MONOTONIC CLOCK_PROCESS_CPUTIME_ID CLOCK_THREAD_CPUTIME_ID
 ```
+![APUE-time-type](http://www.rainbowch.net/resource/APUE-time-type.png)
 
-### Process Environment
+## Process Environment
 
 ```c
 #include <stdlib.h>
+// 执行清理操作后终止进程
 void exit(int status)
-void Exit(int status)
 
+// 直接终止进程
+void _Exit(int status)
+// 直接终止进程
 #include <unistd.h>
 void _exit(int status)
 
+// 设置终止处理程序，进程终止时自动被调用(按后入先出顺序)
 #include <stdlib.h>
 void atexit(void (*func)(void))
 ```
 
 ```c
 #include <stdlib.h>
+// 分配指定字节的存储空间(堆上)
 void *malloc(size_t size)
+// 分配指定字节的存储空间(堆上), 并初始为0
 void *calloc(size_t nobj, size_t size)
+// 减少或增加以前存储空间的长度
 void *realloc(void *ptr, size_t newsize)
+// 释放存储空间
 void free(void *ptr)
 ```
 
 ```c
 #include <stdlib.h>
+// 获取相应的环境变量项
 char *getenv(const char *name)
+// 设置相应的环境变量项, 若已存在，删除重设
 int putenv(char *str)
+// 设置相应的环境变量项, rewrite控制若环境变量已存在时的行为(0:不删除直接返回，1:删除重设为value)
 int setenv(const char*name, const char *value, int rewrite)
-where 'rewrite' is 0 1
+// 删除相应的环境变量项
 int unsetenv(const char *name)
 ```
 
 ```c
+// 非局部跳转：可跨越多个栈帧的跳转
 #include <setjmp.h>
+// 设置跳转位置
 int setjmp(jmp_buf env)
+// 开始跳转
 void longjmp(jmp_buf env, int val)
 ```
 
 ```c
 #include <sys/resource.h>
+// 获取进程资源限制参数
 int getrlimit(int resource, struct rlimit *rlptr)
+// 设置进程资源限制参数
 int setrlimit(int resource, const struct rlimit *rlptr)
-    struct rlimit {
-        rlim_t  rlim_cur;
-        rlim_t  rlim_max;
-    }
+struct rlimit {
+    rlim_t  rlim_cur;
+    rlim_t  rlim_max;
+}
 ```
 
-### Process Controller
+## Process Controller
 
 ```c
+// 获取进程标识符
 #include <unistd.h>
 pid_t getpid(void)
 pid_t getppid(void)
@@ -473,6 +603,7 @@ uid_t getepid(void)
 gid_t getgid(void)
 gid_t getegid(void)
 
+// 设置进程标识符
 int setuid(uid_t uid)
 int setgid(gid_t gid)
 int setreuid(uid_t ruid, uid_t euid)
@@ -480,15 +611,17 @@ int setregid(gid_t rgid, gid_t egid)
 int seteuid(uid_t uid)
 int setegid(gid_t gid)
 
-pid_t fork(void)
+// 创建新的子进程
+pid_t fork(void) // 返回两次，在父进程中返回子进程ID, 在子进程中返回0
 
+// 父进程等待子进程返回
 #include <sys/wait.h>
-pid_t wait(int *statloc)
+pid_t wait(int *statloc) // 返回子进程ID, statloc 是子进程的终止状态, 可用下述宏获得一些终止相关信息
 pid_t waitpid(pid_t pid, int *statloc, int options)
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
-
 //others: wait3 wait4
 ```
+![APUE-wait-statloc-macro](http://www.rainbowch.net/resource/APUE-wait-statloc-macro.png)
 
 ```c
 #include <stdlib.h>
@@ -510,7 +643,7 @@ where 'which' is PRIO_PROCESS PRIO_PGRP PRIO_USER
 clock_t times(struct tms *buf)
 ```
 
-### Process Relationship
+## Process Relationship
 
 ```c
 #include <unistd.h>
@@ -527,7 +660,7 @@ int tcsetpgrp(int fd, pid_t pgrpid)
 pid_t tcgetsid(int fd)
 ```
 
-### Signal Controller
+## Signal Controller
 ```c
 #include <signal.h>
 void (*signal(int signo, void (*func)(int)))(int)
