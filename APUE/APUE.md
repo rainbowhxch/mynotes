@@ -1,7 +1,9 @@
 # APUE NOTE
 
-## Error Option
+## Preface
+我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
 
+## Error Option
 ```c
 // 根据错误代码 (errno) 返回错误信息
 #include <string.h>
@@ -15,7 +17,6 @@ void perror(const char *msg)
 ```
 
 ## File Operation
-
 ```c
 // 打开文件
 #include <fcntl.h>
@@ -97,7 +98,6 @@ int ioctl(int fd, int request, ...)
 ```
 
 ## File and Dir
-
 ```c
 // 文件的相关属性
 #include <sys/stat.h>
@@ -529,7 +529,6 @@ where 'clock_id' is CLOCK_REALTIME CLOCK_MONOTONIC CLOCK_PROCESS_CPUTIME_ID CLOC
 ![APUE-time-type](http://www.rainbowch.net/resource/APUE-time-type.png)
 
 ## Process Environment
-
 ```c
 #include <stdlib.h>
 // 执行清理操作后终止进程
@@ -592,7 +591,6 @@ struct rlimit {
 ```
 
 ## Process Controller
-
 ```c
 // 获取进程标识符
 #include <unistd.h>
@@ -620,18 +618,37 @@ pid_t wait(int *statloc) // 返回子进程ID, statloc 是子进程的终止状�
 pid_t waitpid(pid_t pid, int *statloc, int options)
 int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
 //others: wait3 wait4
+
+// 当前进程执行指定程序 (函数名带p的同时使用PATH环境变量查找文件，l表示参数表，v表示argv[]矢量，e表示提供envp[]数组)
+#include <unistd.h>
+int execl(const char *pathname, const char *arg0, ... /* (char *)0 */ ); // 命令行参数需要以空指针结尾, 继承调用进程中的环境变量
+int execv(const char *pathname, char *const argv[]);
+int execle(const char *pathname, const char *arg0, ... /* (char *)0, char *const envp[] */ );
+int execve(const char *pathname, char *const argv[], char *const envp[]);
+int execlp(const char *filename, const char *arg0, ... /* (char *)0 */ ); // 未找到指定的可执行文件后，则认为该文件为shell脚本
+int execvp(const char *filename, char *const argv[]) // 未找到指定的可执行文件后，则认为该文件为shell脚本
+int fexecve(int fd, char *const argv[], char *const envp[]);
 ```
 ![APUE-wait-statloc-macro](http://www.rainbowch.net/resource/APUE-wait-statloc-macro.png)
 
 ```c
+// 执行命令行命令
 #include <stdlib.h>
 int system(const char *cmdstring)
 ```
+
 ```c
 #include <unistd.h>
+// 获得运行该程序的登录名
 char *getlogin(void)
-int nice(int incr)
+```
 
+```c
+// 更改进程调度的优先级，incr为增加的值(即nice += incr), nice值越高优先级越低，反之亦然
+#include <unistd.h>
+int nice(int incr) // 'NZERO'时系统默认的nice值
+
+// 获得和设置nice值
 #include <sys/resource.h>
 int getpriority(int which, id_t who)
 int setpriority(int which, id_t who, int value)
@@ -639,26 +656,40 @@ where 'which' is PRIO_PROCESS PRIO_PGRP PRIO_USER
 ```
 
 ```c
+// 获取墙上时钟时间、用户CPU时间和系统CPU时间
 #include <sys/times.h>
-clock_t times(struct tms *buf)
+clock_t times(struct tms *buf) // 返回墙上时钟时间
+struct tms {
+    clock_t tms_utime; /* user CPU time */
+    clock_t tms_stime; /* system CPU time */
+    clock_t tms_cutime; /* user CPU time, terminated children */
+    clock_t tms_cstime; /* system CPU time, terminated children */
+}
 ```
 
 ## Process Relationship
-
 ```c
+// 获取和设置进程组ID
 #include <unistd.h>
 pid_t getpgid(pid_t pid)
 pid_t getpgrp()
+// 为本身或子进程设置进程组ID
 int setpgid(pid_t pid, pid_t pgid)
 
-pid_t setsid(void)
+// 创建新会话
+pid_t setsid(void) // 该进程变为新会话的会话首进程
+// 获取会话首进程ID
 pid_t getsid(pid_t pid)
-pid_t tcgetpgrp(int fd)
+// 获取前台进程组ID
+pid_t tcgetpgrp(int fd) // 'fd'为TTY的文件描述符
+// 设置前台进程组ID
 int tcsetpgrp(int fd, pid_t pgrpid)
 
+// 获取会话首进程ID
 #include <termios.h>
 pid_t tcgetsid(int fd)
 ```
+![APUE-session-and-control-terminal](http://www.rainbowch.net/resource/APUE-session-and-control-terminal.png)
 
 ## Signal Controller
 ```c
