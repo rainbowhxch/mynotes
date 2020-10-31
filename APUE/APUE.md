@@ -692,25 +692,40 @@ pid_t tcgetsid(int fd)
 ![APUE-session-and-control-terminal](http://www.rainbowch.net/resource/APUE-session-and-control-terminal.png)
 
 ## Signal Controller
+![APUE-signal-type](http://www.rainbowch.net/resource/APUE-signal-type.png)
+![APUE-signal-handlable-functions](http://www.rainbowch.net/resource/APUE-signal-handlable-functions.png)
 ```c
 #include <signal.h>
-void (*signal(int signo, void (*func)(int)))(int)
-where 'signo' is signal, 'func' is SIG_IGN SIG_DFL or a function pointor
+// 信号捕捉函数
+void (*signal(int signo, void (*func)(int)))(int) // 'signo' 为上述信号之一，'func' 为'SIG_IGN'、'SIG_DFL'或函数地址, 返回上一个设置的处理函数地址
+// 将信号发送给进程或进程组
 int kill(pid_t pid, int signo)
+// 将信号发送给自己
 int raise(int signo)
 
 #include <unistd.h>
-unsigned int alarm(unsigned int seconds)
+// 设置定时器，到时产生SIGALRM信号
+unsigned int alarm(unsigned int seconds) // 返回剩余时间
+// 挂起进程，直至捕捉一个信号
 int pause(void)
 
 #include <signal.h>
+// 处理信号集
 int sigemptyset(sigset_t *set)
 int sigfillset(sigset_t *set)
 int sigaddset(sigset_t *set, int signo)
 int sigdelset(sigset_t *set, int signo)
 int sigismember(const sitset_t *set, int signo)
+// 检测或更改信号屏蔽字
 int sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oset)
 where 'how' is SIG_BLOCK SIG_UNBLOCK SIG_SETMASK
+// 返回调用进程阻塞的信号集
+int sigpending(sigset_t *set)
+```
+![APUE-sigprocmask-how](http://www.rainbowch.net/resource/APUE-sigprocmask-how.png)
+
+```c
+// 检测或更改信号相关联的处理动作
 int sigaction(int signo, const struct sigaction *restrict act, struct sigaction *restrict oact)
 struct sigaction {
     void (*sa_handler)(int);
@@ -718,4 +733,24 @@ struct sigaction {
     int sa_flags;
     void (*sa_sigaction)(int signo, siginfo_t *info, void *context)
 }
+```
+![APUE-sigaction-sa_flags](http://www.rainbowch.net/resource/APUE-sigaction-sa_flags.png)
+
+```c
+// 保存信号屏蔽字的非本地跳转
+#include <setjmp.h>
+int sigsetjmp(sigsetjmp_buf env, int savemask)
+void siglongjmp(sigsetjmp_buf env, int val)
+```
+
+```c
+// 设置信号屏蔽字并挂起进程，直至捕捉到一个信号，然后恢复调用本函数之前的信号屏蔽字并返回
+#include <signal.h>
+int sigsuspend(const sigset_t *sigmask)
+```
+
+```c
+/ 使程序异常终止
+#include <stdlib.h>
+void abort(void)
 ```
