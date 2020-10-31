@@ -1,11 +1,16 @@
 # UNP Note
 
 ## Preface
-同上一篇Unix高级环境编程篇一样，我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
+先修知识：计算机网络， 同上一篇Unix高级环境编程篇一样，我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
 
 ## Socket
 ```c
 #include <netinet/in.h>
+struct in_addr {
+    in_addr_t s_addr; /* network byte ordered */
+}
+
+// IPv4套接字
 struct sockaddr_in {
     uint8_t sin_len;
     sa_family_t sin_family; /* AF_INET, AF_INET6 */
@@ -14,6 +19,7 @@ struct sockaddr_in {
     char sin_zero[8];
 }
 
+// IPv6套接字
 struct sockaddr_in6 {
     uint8_t sin6_len;
     sa_family_t sin6_family;
@@ -24,29 +30,38 @@ struct sockaddr_in6 {
     uint32_t sin6_scope_id;
 }
 
-struct sockaddr_storage {
-    uint8_t ss_len;
-    sa_family_t ss_family;
-    ... /* enough large */
-}
-
+// 通用套接字
 #include <sys/socket.h>
 struct sockaddr {
     uint8_t sa_len;
     sa_family_t sa_family;
     char sa_data[14];
 }
+
+// 新的通用套接字
+struct sockaddr_storage {
+    uint8_t ss_len;
+    sa_family_t ss_family;
+    ... /* enough large */
+}
 ```
+![APUE-data-types](http://www.rainbowch.net/resource/APUE-data-types.png)
 
 ```c
+// 字节排序函数
 #include <netinet/in.h>
+// 16bits主机序转换为网络序
 uint16_t htons(uint16_t host16bitvalue)
+// 32bits网络序转换为主机序
 uint32_t htonl(uint32_t host32bitvalue)
+// 16bits主机序转换为网络序
 uint16_t ntohs(uint16_t net16bitvalue)
+// 32bits网络序转换为主机序
 uint32_t ntohl(uint32_t net32bitvalue)
 ```
 
 ```c
+// 字节操纵函数
 #include <string.h>
 void bzero(void *dest, size_t nbytes)
 void bcopy(const void *src, void *dest, size_t nbytes)
@@ -58,14 +73,19 @@ int memcmp(const void *ptr1, const void *ptr2, size_t nbytes)
 ```
 
 ```c
+// 地址转换函数
 #include <arpa/inet.h>
-int inet_aton(const char *strptr, struct in_addr *addptr)
+// 字符串转网络字节序的二进制值
 in_addr_t inet_addr(const char *strptr) //depreture
+// 网络字节序的二进制值转字符串
 char *inet_ntoa(struct in_addr inaddr)
 
+// IPv4&6都可以用的转换函数如下，建议使用
+// 字符串转网络字节序的二进制值
 int inet_pton(int family, const char *strptr, void *addrptr)
-const char *inet_ntop(int family, const void *addrptr, char *strptr, size_t len)
-where 'family' is AF_INET AF_INET6
+// 网络字节序的二进制值转字符串
+const char *inet_ntop(int family, const void *addrptr, char *strptr, size_t len) // where 'family' is AF_INET AF_INET6
+// 'len'的建议值
 #include <netinet/in.h>
 #define INET_ADDRSTRLEN 16
 #define INET6_ADDRSTRLEN 46
@@ -75,9 +95,13 @@ where 'family' is AF_INET AF_INET6
 
 ```c
 #include <sys/socket.h>
-int socket(int family, int type, int protocol)
+// 创建套接字
+int socket(int family, int type, int protocol) // 返回socket描述符
+// 建立与TCP服务器的连接
 int connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen)
+// 将本地协议地址赋予套接字
 int bind(int sockfd, const struct sockaddr *myaddr, socklen_t addrlen)
+// 将主动套接字变为被动套接字，并规定相应套接字排队的最大连接数
 int listen(int sockfd, int backlog)
 int accept(int sockfd, struct sockaddr *cliaddr, socklen_t addrlen)
 int getsockname(int sockfd, struct sockaddr *localaddr, socklen_t addrlen)
