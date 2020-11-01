@@ -100,7 +100,7 @@ int socket(int family, int type, int protocol) // 返回socket描述符
 // 建立与TCP服务器的连接
 int connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen)
 // 将本地协议地址赋予套接字
-int bind(int sockfd, const struct sockaddr *myaddr, socklen_t addrlen)
+int bind(int sockfd, const struct sockaddr *myaddr, socklen_t addrlen) /* 通配地址：'INADDR_ANY' 'in6addr_any' */
 // 将主动套接字变为被动套接字，并规定相应套接字排队的最大连接数
 int listen(int sockfd, int backlog)
 int accept(int sockfd, struct sockaddr *cliaddr, socklen_t addrlen)
@@ -110,6 +110,7 @@ int getpeername(int sockfd, struct sockaddr *peeraddr, socklen_t addrlen)
 #include <unistd.h>
 int close(int sockfd)
 ```
+![APUE-bind-union](http://www.rainbowch.net/resource/APUE-bind-union.png)
 
 ```c
 #include <sys/select.h>

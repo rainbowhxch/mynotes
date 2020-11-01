@@ -754,3 +754,32 @@ int sigsuspend(const sigset_t *sigmask)
 #include <stdlib.h>
 void abort(void)
 ```
+
+```c
+#include <unistd.h>
+// 进程挂起'seconds'秒，或进程捕捉到一个信号
+unsigned int sleep(unsigned int seconds)
+#include <time.h>
+// 提供纳秒级精度，若因为信号被中断，则剩余时间保存在'remtp'中
+int nanosleep(const struct timespec *reqtp, struct timespec *remtp)
+// 提供特定时钟
+int clock_nanosleep(clockid_t clock_id, int flags,
+                    const struct timespec *reqtp, struct timespec *remtp) /* 'flags'为0，表示相对时间，为'TIMER_ABSTIME'表示绝对时间 */
+```
+
+```c
+#include <signal.h>
+// 发送排队信号
+int sigqueue(pid_t pid, int signo, const union sigval value) /* 'value'是信号额外的信息, 可以用'sigaction'函数的'SA_SIGINFO'标志获得额外信息 */
+// 打印与信号编号对应的字符串
+void psignal(int signo, const char *msg) /* 类似perror */
+void psiginfo(const siginfo_t *info, const char *msg)
+// 获取与信号编号对应的字符串
+char *strsignal(int signo)
+// Solaris提供函数在信号编号与信号名之间转换
+int sig2str(int signo, char *str)
+int str2sig(const char *str, int *signop)
+```
+![APUE-job-control](http://www.rainbowch.net/resource/APUE-job-control.png)
+
+## Thread
