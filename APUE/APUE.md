@@ -783,3 +783,49 @@ int str2sig(const char *str, int *signop)
 ![APUE-job-control](http://www.rainbowch.net/resource/APUE-job-control.png)
 
 ## Thread
+```c
+#include <pthread.h>
+// 比较两个线程ID
+int pthread_equal(pthread_t tid1, pthread_t tid2)
+// 返回本线程ID
+pthread_t pthread_self(void)
+// 创建新线程
+int pthread_create(pthread_t *restrict tidp, const pthread_attr_t *restrict attr,
+                   void *(*start_rtn)(void *), void *restrict arg) /* 'tidp'被填充为新创建的线程ID, 'start_rtn'是线程运行的地址，'arg'是参数 */
+// 终止线程
+void pthread_exit(void *rval_ptr) /* ‘rval_ptr'被'pthread_join'使用 */
+// 阻塞等待指定线程退出
+int pthread_join(pthread_t thread, void **rval_ptr) /* 如果指定线程被取消而不是从启动例程中返回则'rval_ptr'被设置成'PTHREAD_CANCELED' */
+// 请求取消同一进程中的其他线程
+int pthread_cancel(pthread_t tid)
+// 设置线程清理处理程序
+void pthread_cleanup_push(void (*rtn)(void *), void *arg) /* 类似于'atexit()' */
+// 执行或取消线程清理处理程序
+void pthread_cleanup_pop(int execute) /* 'execute'非0时执行弹出的线程清理处理程序并执行，为0时，不执行 */
+// 默认情况下，线程的终止状态会保存到被调用pthread_join，但如果线程被分离底层存储资源则立即收回，分离后不能对该线程调用pthread_join
+int pthread_detach(pthread_t tid)
+```
+
+### 互斥量
+```c
+#include <pthread.h>
+// 初始化互斥量
+int pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_muutexattr_t *restrict attr) /* 用自定义的属性初始化互斥量需指定'attr', 否则为NULL为默认属性 */
+// 销毁动态分配的互斥量
+int pthread_mutex_destroy(pthread_mutex_t *mutex)
+// 对互斥量上锁，若已上锁，则阻塞
+int pthread_mutex_lock(pthread_mutex_t *mutex)
+// 对互斥量上锁，不阻塞，若已上锁，则返回'EBUSY'
+int pthread_mutex_trylock(pthread_mutex_t *mutex)
+// 对互斥量解锁
+int pthread_mutex_unock(pthread_mutex_t *mutex)
+#include <pthread.h>
+#include <time.h>
+// 同'pthread_mutex_lock'，但有时间限制，若超过时间返回'ETMEDOUT'，不再阻塞
+int pthread_mutex_timedlock(pthread_mutex_t *restrict mutex, const struct timespec *restrict tsptr)
+```
+
+### 读写锁
+```c
+
+```
