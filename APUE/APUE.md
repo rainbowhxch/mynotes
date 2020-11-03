@@ -1,4 +1,4 @@
-# APUE NOTE
+st # APUE NOTE
 
 ## Preface
 我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
@@ -827,5 +827,185 @@ int pthread_mutex_timedlock(pthread_mutex_t *restrict mutex, const struct timesp
 
 ### 读写锁
 ```c
+#include <pthread.h>
+// 初始化读写锁
+int pthread_rwlock_init(pthread_rwlock_t *restrict rwlock, const pthread_rwlockattr_t *restrict attr)
+// 销毁动态分配的读写锁
+int pthread_rwlock_destory(pthread_rwlock_t *rwlock)
+// 读模式加锁, 以读模式加锁的线程可以得到访问权，但以写模式加锁的线程会被阻塞
+int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
+// 写模式加锁, 所有尝试加锁的其他线程会被阻塞
+int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
+// 解锁
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
+// 尝试以读模式加锁，失败则直接返回错误'EBUSY'
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
+// 尝试以写模式加锁，失败则直接返回错误'EBUSY'
+int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock)
+// 带有超时的读写锁
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *restrict rwlock, const struct timespec *restrict tsptr)
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *restrict rwlock, const struct timespec *restrict tsptr)
+```
 
+### 条件变量
+```c
+#include <pthread.h>
+// 初始化条件变量
+int pthread_cond_init(pthread_cond_t *restrict cond, const pthread_condattr_t *restrict attr)
+// 销毁条件变量
+int pthread_cond_destroy(pthread_cond_t *cond)
+// 等待条件成立
+int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex)
+// 带有超时等待条件成立
+int pthread_cond_timedwait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex, const struct timespec *restrict tsptr)
+// 通知一个线程条件已满足
+int pthread_cond_signal(pthread_cond_t *cond)
+// 通知所有线程条件已满足
+int pthread_cond_broadcast(pthread_cond_t *cond)
+```
+
+### 自旋锁
+```c
+/* 自旋锁与互斥量类似但它不是通过休眠使进程阻塞，而是在获取锁之前一直忙等 */
+#include <pthread.h>
+int pthread_spin_init(pthread_spinlock_t *lock, int pshared) /* 'pshared'为'PTHREAD_PROCESS_SHARED'便是可被能访问锁底层内存的所有线程获取，'PTHREAD_PROCESS_PRIVATE'表示智能被初始化该锁的进程内部的线程访问 */
+int pthread_spin_destroy(pthread_spinlock_t *lock)
+int pthread_spin_lock(pthread_spinlock_t *lock)
+int pthread_spin_trylock(pthread_spinlock_t *lock)
+int pthread_spin_unlock(pthread_spinlock_t *lock)
+```
+
+### 屏障
+```c
+/* 屏障可以保证一定数量的线程达到某种状态时再继续执行 */
+#include <pthread.h>
+int pthread_barrier_init(pthread_barrier_t *restrict barrier, const pthread_barrierattr_t *restrict attr,
+                        unsigned int count) */ 'count'说明需要多少线程完成工作 */
+int pthread_barrier_destroy(pthread_barrier_t *barrier)
+// 说明本线程已完成工作，等待其他线程完成
+int pthread_barrier_wait(pthread_barrier_t *barrier)
+```
+
+## 线程控制
+### 线程属性
+```c
+#include <pthread.h>
+int pthread_attr_init(pthread_attr_t *attr)
+int pthread_attr_destroy(pthread_attr_t *attr)
+// 设置线程的分离状态
+int pthread_attr_getdetachstate(const pthread_attr_t *restrict attr, int *detachstate) /* 'detachstate'为'PTHREAD_CREATE_DETACHED'或'PTHREAD_CREATE_JOINABLE' */
+int pthread_attr_setdetachstate(const pthread_attr_t *attr, int *detachstate)
+// 设置线程的栈属性
+int pthread_attr_getstack(const pthread_attr_t *restrict attr, void **restrict stackaddr, size_t *restrict stacksize)
+int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr, size_t stacksize)
+int pthread_attr_getstacksize(const pthread_attr_t *restrict attr, size_t *restrict stacksize)
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize) /* 'stacksize'不能小于'PTHREAD_STACK_MIN' */
+// 设置线程栈末尾之后用以避免栈溢出的扩展内存的大小
+int pthread_attr_getguardsize(const pthread_attr_t *restrict attr, size_t *restrict guardsize)
+int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize)
+```
+### 同步属性
+#### 互斥量属性
+```c
+int pthread_mutexattr_init(pthread_mutexattr_t *attr)
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
+// 进程共享属性
+int pthread_mutexattr_getpshared(pthread_mutexattr_t *restrict attr, int *restrict pshared) /* 'pshared'为'PTHREAD_PROCESS_PRIVATE'时，互斥量可被进程中多个线程共享 */
+int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared)
+// 健壮属性
+int pthread_mutexattr_getrobust(pthread_mutexattr_t *restrict attr, int *restrict robust) /* 'robust'为'PTHREAD_MUTEX_STALLED'时持有互斥量的进程终止时不采取特别动作，'PTHREAD_MUTEX_ROBUST'使其他等待锁的'pthread_mutex_lock'调用返回'EOWNERDEAD' */
+int pthread_mutexattr_setrobust(pthread_mutexattr_t *attr, int robust)
+// 指明与该互斥量相关的状态在互斥量解锁前时一致的
+int pthread_mutexattr_consistent(pthread_mutex_t *mutex)
+int pthread_mutexattr_getype(pthread_mutexattr_t *restrict attr, int *restrict type)
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+```
+![APUE-mutex-type](http://www.rainbowch.net/resource/APUE-mutex-type.png)
+
+#### 读写锁属性
+```c
+#include <pthread.h>
+int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
+int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
+int pthread_rwlockattr_getpshared(pthread_rwlockattr_t *restrict attr, int *restrict pshared)
+int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared)
+```
+
+#### 条件变量属性
+```c
+#include <pthread.h>
+int pthread_condattr_init(pthread_condattr_t *attr)
+int pthread_condattr_destroy(pthread_condattr_t *attr)
+int pthread_condattr_getpshared(pthread_condattr_t *restrict attr, int *restrict pshared)
+int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared)
+// 设置'pthread_cond_timedwait'采用哪个时钟
+int pthread_condattr_getclock(pthread_condattr_t *restrict attr, clockid_t *restrict clock_id)
+int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id)
+```
+
+#### 屏障属性
+```c
+#include <pthread.h>
+int pthread_barrierattr_init(pthread_barrierattr_t *attr)
+int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
+int pthread_barrierattr_getpshared(pthread_barrierattr_t *restrict attr, int *restrict pshared)
+int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
+```
+![APUE-thread-safed-functions](http://www.rainbowch.net/resource/APUE-thread-safed-functions.png)
+
+### 标准I/O线程安全
+```c
+#include <stdio.h>
+// FILE对象加解锁
+int ftrylockfile(FILE *fp)
+void flockfile(FILE *fp)
+void funlockfile(FILE *fp)
+// 不加锁版本的基于字符的标准I/O (建议在flockfile/funlockfile之间使用)
+int getchar_unlocked(void)
+int getc_unlocked(FILE *fp)
+int putchar_unlocked(int c)
+int putc_unlocked(intc, FILE *fp)
+```
+
+### 线程特定数据
+```c
+#include <pthread.h>
+// 创建与线程特定数据相关联的一个键
+int pthread_key_create(pthread_key_t *keyp, void (*destructor)(void *)) /* 'destructor'为析构函数，当与此键关联的数据不为空时且线程终止时被调用 */
+// 删除键
+int pthread_key_delete(pthread_key_t key) /* 析构函数不会被调用 */
+// 在多个线程中保证函数被调用一次
+pthread_once_t initflag = PTHREAD_ONCE_INIT;
+int pthread_once(pthread_once_t *initflag, vod (*initfn)(void))
+// 关联线程的键与特定数据
+void *pthread_getspecific(pthread_key_t key)
+int pthread_setspecific(pthread_key_t key, const void *value)
+```
+
+### 线程的取消选项
+```c
+#include <pthread.h>
+// 设置可取消状态属性
+int pthread_setcancelstate(int state, int *oldstate) /* 'state'为'PTHREAD_CANCEL_ENABLE'或'PTHREAD_CANCEL_DISABLE'，为'PTHREAD_CANCEL_DISABLE'时取消请求被阻塞直至'PTHREAD_CANCEL_ENABLE'被设置后再被取消 */
+// 添加取消点
+void pthread_testcancel(void)
+int pthread_setcanceltype(int type, int *oldtype) /* 'type'为'PTHREAD_CANCEL_DEFERRED'或'PTHREAD_CANCEL_ASYNCHRONOUS' */
+```
+
+### 线程与信号
+```c
+#include <signal.h>
+// 线程环境下的'sigprocmask'
+int pthread_sigmask(int how, const sigset_t *restrict set, sigset_t *restrict oset)
+// 等待一个或多个信号出现
+int sigwait(const sigset_t *restrict set, int *restrict signop) /* 'set'是线程等待的信号集,'signop'将填充为等到的信号 */
+// 向线程发送信号
+int pthread_kill(pthread_t thread, int signo)
+```
+
+### 线程和Fork
+```c
+#include <pthread.h>
+// 建立fork处理程序
+int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void))
 ```
