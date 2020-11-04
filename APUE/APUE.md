@@ -1,4 +1,4 @@
-st # APUE NOTE
+# APUE NOTE
 
 ## Preface
 我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
@@ -677,7 +677,7 @@ pid_t getpgrp()
 int setpgid(pid_t pid, pid_t pgid)
 
 // 创建新会话
-pid_t setsid(void) // 该进程变为新会话的会话首进程
+pid_t setsid(void) // 该进程变为新会话的会话首进程,并成为一个新进程组的组长，再之切断其控制终端
 // 获取会话首进程ID
 pid_t getsid(pid_t pid)
 // 获取前台进程组ID
@@ -1009,3 +1009,33 @@ int pthread_kill(pthread_t thread, int signo)
 // 建立fork处理程序
 int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void))
 ```
+
+## 守护进程(daemon)
+### 日志
+```c
+#include <syslog.h>
+// 初始化日志消息选项
+void openlog(const char *ident, int option, int facility) /* 可选，若不调用，'syslog'第一次调用时将自动调用 */
+// 产生一条日志消息
+void syslog(int priority, const char *format, ...) /* 'priority'由'facility'与'level'相或组成，'format'中'%m'会被替换成'errno'对应的出错消息 */
+// 关闭用于与syslogd daemon进行通信的描述符
+void closelog(void)
+// 设置进程的记录优先级屏蔽字
+int setlogmask(int maskpri)
+```
+### 单例守护进程
+考虑使用文件和记录锁实现
+### 编程规则
+1. 设置文件模式屏蔽字(调用umask())为已知值(通常为0)
+2. 调用fork()，然后使父进程exit，保证父进程终止，保证子进程不是组长进程
+3. 调用setsid创建一个新会话，(a)成为会话首进程(b)成为新进程组的组长进程(c)没有控制终端
+4. 更改当前工作目录为根目录或者指定目录(chdir())
+5. 关闭不再需要的文件描述符(close())
+6. 使文件描述符0、1、2与/dev/null关联
+### 守护进程惯例
+- 若使用锁文件，应存储再/var/run/目录中，应name.pid命名
+- 配置文件应放在/etc/目录下，应name.conf命名
+- 通常由系统初始化脚本启动，如/etc/init.d/*下的脚本，若需要在终止时自动重启则需要再/etc/inittab中为该daemon包括respawn记录项
+- 守护进程应在启动时读取一次配置文件，此后一般不再查看它，为使已修改的配置文件生效，应使守护进程捕捉SIGHUP信号，接受到信号后重新读取配置文件
+
+## 高级I/O
