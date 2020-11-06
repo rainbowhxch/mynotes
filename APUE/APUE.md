@@ -1023,6 +1023,10 @@ void closelog(void)
 // 设置进程的记录优先级屏蔽字
 int setlogmask(int maskpri)
 ```
+![APUE-openlog-option](http://www.rainbowch.net/resource/APUE-openlog-option.png)
+![APUE-openlog-facility](http://www.rainbowch.net/resource/APUE-openlog-facility.png)
+![APUE-syslog-level](http://www.rainbowch.net/resource/APUE-syslog-level.png)
+
 ### 单例守护进程
 考虑使用文件和记录锁实现
 ### 编程规则
@@ -1039,3 +1043,117 @@ int setlogmask(int maskpri)
 - 守护进程应在启动时读取一次配置文件，此后一般不再查看它，为使已修改的配置文件生效，应使守护进程捕捉SIGHUP信号，接受到信号后重新读取配置文件
 
 ## 高级I/O
+### 记录锁
+```c
+#include <fcnl.h>
+// 文件记录锁操作
+int fcntl(int fd, int cmd, .../* struct flock *flockptr */)
+struct flock {
+    short l_type;    /* Type of lock: F_RDLCK(共享读锁), F_WRLCK(独占性写锁), F_UNLCK(解锁) */
+    short l_whence;  /* How to interpret l_start:
+                       SEEK_SET, SEEK_CUR, SEEK_END */
+    off_t l_start;   /* Starting offset for lock */
+    off_t l_len;     /* Number of bytes to lock */
+    pid_t l_pid;     /* PID of process blocking our lock
+                       (set by F_GETLK and F_OFD_GETLK) */
+};
+```
+![APUE-lock-rules](http://www.rainbowch.net/resource/APUE-lock-rules.png)
+![APUE-fcntl-cmd](http://www.rainbowch.net/resource/APUE-fcntl-cmd.png)
+### I/O多路转接
+```c
+#include <sys/select.h>
+// 多路转接
+int select(imt maxfdp1, fd_set *restrict readfds, fd_set *restrict writefds, fd_set *restrict exceptfds,
+          struct timeval *restrict tvptr) /* 'readfds'是函数中最大的文件描述符加1，返回准备就绪的描述符数目 */
+void FD_ISSET(int fd, fd_set *fdset)
+void FD_CLR(int fd, fd_set *fdset)
+void FD_SET(int fd, fd_set *fdset)
+void FD_ZERO(fd_set *fdset)
+// 附带信号屏蔽字的'select'
+int pselect(imt maxfdp1, fd_set *restrict readfds, fd_set *restrict writefds, fd_set *restrict exceptfds,
+          const struct timespec *restrict tvptr, const sigset_t *restrict sigmask) /* 'readfds'是函数中最大的文件描述符加1，返回准备就绪的描述符数目 */
+#include <poll.h>
+int poll(struct pollfd fdarray[], nfds_t nfds, int timeout) /* 'timeout'以毫秒为单位，返回准备就绪的描述符数目 */
+struct pollfd {
+    int fd;
+    short events;
+    short revents;
+}
+```
+![APUE-poll-events](http://www.rainbowch.net/resource/APUE-poll-events.png)
+### 异步I/O
+```c
+#include <aio.h>
+struct aiocb {
+    /* The order of these fields is implementation-dependent */
+
+    int             aio_fildes;     /* File descriptor */
+    off_t           aio_offset;     /* File offset */
+    volatile void  *aio_buf;        /* Location of buffer */
+    size_t          aio_nbytes;     /* Length of transfer */
+    int             aio_reqprio;    /* Request priority */
+    struct sigevent aio_sigevent;   /* Notification method */
+    int             aio_lio_opcode; /* Operation to be performed;
+                                  lio_listio() only */
+
+    /* Various implementation-internal fields not shown */
+};
+
+struct sigevent {
+    int    sigev_notify;  /* Notification method: 'SIGEV_NONE'、'SIGEV_SIGNAL'、'SIGEV_THREAD' */
+    int    sigev_signo;   /* Notification signal */
+    union sigval sigev_value;
+                         /* Data passed with notification */
+    void (*sigev_notify_function) (union sigval);
+                         /* Function used for thread
+                            notification (SIGEV_THREAD) */
+    void  *sigev_notify_attributes;
+                         /* Attributes for notification thread
+                            (SIGEV_THREAD) */
+    pid_t  sigev_notify_thread_id;
+                         /* ID of thread to signal
+                            (SIGEV_THREAD_ID); Linux-specific */
+};
+
+union sigval {            /* Data passed with notification */
+    int     sival_int;    /* Integer value */
+    void   *sival_ptr;    /* Pointer value */
+};
+// 异步读写
+int aio_read(struct aiocb *aiocb)
+int aio_write(struct aiocb *aiocb)
+// 保证数据同步到持久化存储中
+int aio_fsync(int op, struct aiocb *aiocb) /* 'op'为'O_DSYNC'时相当于'fdatasync', 为O_SYNC'时相当于'fsync' */
+// 获得异步读写的完成状态
+int aio_error(const struct aiocb *aiocb) /* 0:完成  -1:失败  'EINPROGRESS':仍在等待 */
+// 在异步I/O完成后调用，获得异步I/O中read/write/fsync操作对应的返回值
+ssize_t aio_return(const struct aiocb *aiocb)
+// 阻塞进程，等待异步I/O完成
+int aio_suspend(const struct aiocb *const list[], int nent, const struct timespec *timeout)
+// 尝试取消正进行的异步I/O操作
+int aio_cancel(int fd, struct aiocb *aiocb) /* 返回值：'AIO_ALLDONE'、'AIO_CANCELED'、'AIO_NOTCANCELD'、-1 */
+// 提交一系列异步I/O请求
+// int lio_listio(int mode, struct aiocb *restrict const list[restrict], int nent, struct sigevent *restrict sigev) /* 'mode'为'LIO_WAIT'时同步执行I/O,为'LIO_NOWAIT'时异步执行I/O，'sigev'中指定的异步通知会在所有的I/O操作完成后发送 */
+```
+
+### 散布读与聚集写
+```c
+#include <sys/uio.h>
+// 散步读
+ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
+// 聚集写
+ssize_t writev(int fd, const struct iovec *iov, int iovcnt)
+struct iovec {
+    void   *iov_base;   /* starting address of buffer */
+    size_t iov_len;     /* size of buffer */
+}
+```
+### 内存映射I/O
+```c
+#include <sys/mmanl.h>
+// 将磁盘文件映射到内存中的映射区中，使得在映射区中读写相当于读写磁盘文件(读写操作会自动反馈到文件)
+void *mmap(void *addr, size_t len, int prot, int flag, int fd, off_t off) /* 'addr'为映射区的其实地址，一般为0，表示由系统选择，'prot'指定连映射区的保护要求，返回值：映射区的起始地址 */
+```
+![APUE-mmap-prot](http://www.rainbowch.net/resource/APUE-mmap-prot.png)
+![APUE-mmap-flag](http://www.rainbowch.net/resource/APUE-mmap-flag.png)
