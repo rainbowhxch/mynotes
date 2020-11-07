@@ -43,5 +43,5 @@ set +x			# stop debugging from here
 ## Bash 环境
 ### 变量
 
-## Copyright(C)
+## Copyright(©️)
 本文绝大部分内容来自Machtelt Garrels 所作的 [Bash Guide for Beginners](https://tldp.org/LDP/Bash-Beginners-Guide/html/index.html)，文章涉及的一切版权归原作者所有，本文只是作者的提炼笔记记录，如果对你学习有所帮助，那么就再好不过了。

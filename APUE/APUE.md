@@ -1,7 +1,7 @@
 # APUE NOTE
 
 ## Preface
-我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
+我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，千万不要通过变量名猜测变量意图，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
 
 ## Error Option
 ```c
@@ -1154,6 +1154,42 @@ struct iovec {
 #include <sys/mmanl.h>
 // 将磁盘文件映射到内存中的映射区中，使得在映射区中读写相当于读写磁盘文件(读写操作会自动反馈到文件)
 void *mmap(void *addr, size_t len, int prot, int flag, int fd, off_t off) /* 'addr'为映射区的其实地址，一般为0，表示由系统选择，'prot'指定连映射区的保护要求，返回值：映射区的起始地址 */
+// 更改现有映射区的权限
+int mprotect(void *addr, size_t len, int prot)
+// 将页冲洗到被映射的文件
+int msync(void *addr, size_t len, int flags) /* 'flags'为'MS_ASYNC'不阻塞冲洗，'MS_SYNC'阻塞冲洗，'MS_INVALIDATE'丢弃没有同步的页 */
+/ 关闭映射区
+int munmap(void *addr, size_t len) /* 注意关闭映射区使用的文件描述符并不解除映射区 */
 ```
 ![APUE-mmap-prot](http://www.rainbowch.net/resource/APUE-mmap-prot.png)
 ![APUE-mmap-flag](http://www.rainbowch.net/resource/APUE-mmap-flag.png)
+
+## 进程间通信
+## 管道
+```c
+#include <unistd.h>
+// 创建管道
+int pipe(int fd[2]) /* fd[0]读而打开，fd[1]写而打开，fd[1]的输出示fd[0]的输入，写管道的字节数不能大于'PIPE_BUF' */
+#include <stdio.h>
+// pipe+fork+exec
+FILE *popen(const char *cmdstring, const char *type) /* 'cmdstring'是传递给shell的命令，'type'为'r'或'w'，返回值：标准I/O的文件指针，
+                                                        为'r'时连接到'cmdstring'的标准输出，为'w'时连接到标准输入 */
+// 关闭标准I/O流，等待命令结束，然后返回shell的终止状态
+int pclose(FILE *fp)
+```
+
+## FIFO(命名管道)
+```c
+#include <sys/stat.h>
+// 创建FIFO
+int mkfifo(const char *path, mode_t mode) /* 'mode'取值与'open'函数中的'mode'值相同, 在写FIFO文件时，尽量考虑一次写低于'PIPE_BUF'字节量的数据 */
+int mkfifoat(int fd, const char *path, mode_t mode)
+```
+
+## XSI IPC
+```c
+#include <sys/ipc.h>
+// 由一个路径名和项目ID产生一个键
+key_t ftok(const char *path, int id) /* 'id'只被使用低8位 */
+```
+![APUE-XSI-IPC-access-mode](http://www.rainbowch.net/resource/APUE-XSI-IPC-access-mode.png)
