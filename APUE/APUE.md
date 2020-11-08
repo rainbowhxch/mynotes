@@ -1188,8 +1188,232 @@ int mkfifoat(int fd, const char *path, mode_t mode)
 
 ## XSI IPC
 ```c
-#include <sys/ipc.h>
 // 由一个路径名和项目ID产生一个键
+#include <sys/ipc.h>
 key_t ftok(const char *path, int id) /* 'id'只被使用低8位 */
+#include <sys/msg.h>
+// 创建消息队列
+int msgget(key_t key, int flag) /* 返回消息队列ID */
+// 类似于针对消息队列的'ioctl'函数
+int msgctl(int msqid, int cmd, struct msqid_ds *buf)
+// 将数据放到消息队列中
+int msgsnd(imt msqid, const void *ptr, size_t nbytes, int flag) /* 'flag'为'IPC_NOWAIT'时消息队列满时非阻塞出错返回'EAGAIN'，否则等待队列有空间或队列被删除或捕捉到一个信号 */
+// 从队列中取消息
+ssize_t msgrcv(int msqid, void *ptr, size_t nbytes, long type, int flag) /* 'type'指定取出哪一种消息，0:第一个，>0:类型为'type'的消息，<0:类型小于等于'|type|'的类型值最小的消息 */
+#include <sys/sem.h>
+// 创建信号量
+int semget(key_t key, int nsems, int flag) /* 'nsems'时集合中的信号量数, 返回信号量ID */
+// 对信号量的多种操作
+int semctl(int semid, int semnum, int cmd, ... /* union semnu arg */)
+#include <sys/shm.h>
+// 创建一个共享存储段
+int shmget(key_t key, size_t size, int flag)
+// 对共享存储段进行多种操作
+int shmctl(int shmid, int cmd, struct shmid_ds *buf)
+// 将共享存储段连接到进程的地址空间
+void *shmat(int shmid, const void *addr, int flag) /* 返回共享存储段链接的实际地址 */
+// 与共享存储段分离连接
+int shmdt(const void *addr)
+// POSIX信号量:未命名信号量、命名信号量
+#include <semaphore.h>
+// 新建命名信号量或使用现有信号量
+sem_t *sem_open(const char *name, int oflag, .. */ mode_t mode, unsigned int value */) /* 返回信号量指针 */
+// 释放与信号量相关的资源
+int sem_close(sem_t *sem)
+// 销毁命名信号量
+int sem_unlink(const char *name)
+// 减1操作
+int sem_trywait(sem_t *sem)
+int sem_wait(sem_t *sem)
+#include <time.h>
+int sem_timedwait(sem_t *restrict sem const struct timespec *restrict tsptr)
+// 加1操作
+int sem_post(sem_t *sem)
+// 创建未命名的信号量
+int sem_init(sem_t *sem, int pshared, unsigned int value)
+// 销毁未命名信号量
+int sem_destroy(sem_t *sem)
+// 获取信号量的值
+int sem_getvalue(sem_t *restrict sem, int *restrict valp)
 ```
 ![APUE-XSI-IPC-access-mode](http://www.rainbowch.net/resource/APUE-XSI-IPC-access-mode.png)
+
+## 网络IPC：套接字
+### 套接字描述符
+```c
+#include <sys/socket.h>
+// 创建套接字描述符
+int socket(int domain, int type, int protocol)
+// 关闭套接字的I/O
+int shutdown(int sockfd, int how) /* 'how'为'SHUT_RD'(关闭读端)、'SHUTWR'(关闭写端)、'SHUTRDWR'(关闭读写端)
+```
+![APUE-socket-domain](http://www.rainbowch.net/resource/APUE-socket-domain.png)
+![APUE-socket-type](http://www.rainbowch.net/resource/APUE-socket-type.png)
+![APUE-socket-protocol](http://www.rainbowch.net/resource/APUE-socket-protocol.png)
+
+### 字节序
+```c
+// 字节排序函数
+#include <netinet/in.h>
+// 16bits主机序转换为网络序
+uint16_t htons(uint16_t host16bitvalue)
+// 32bits网络序转换为主机序
+uint32_t htonl(uint32_t host32bitvalue)
+// 16bits主机序转换为网络序
+uint16_t ntohs(uint16_t net16bitvalue)
+// 32bits网络序转换为主机序
+uint32_t ntohl(uint32_t net32bitvalue)
+```
+
+### 地址格式
+```c
+#include <netinet/in.h>
+struct in_addr {
+    in_addr_t s_addr; /* network byte ordered */
+}
+
+// IPv4套接字
+struct sockaddr_in {
+    uint8_t sin_len;
+    sa_family_t sin_family; /* AF_INET, AF_INET6 */
+    in_port_t sin_port;
+    struct in_addr sin_addr; /* sin_addr.s_addr = htonl(INADDR_ANY) */
+    char sin_zero[8];
+}
+
+// IPv6套接字
+struct sockaddr_in6 {
+    uint8_t sin6_len;
+    sa_family_t sin6_family;
+    in_port_t sin6_port;
+
+    uint32_t sin6_flowinfo;
+    struct in6_addr sin6_addr; /* sin6_addr = in6addr_any */
+    uint32_t sin6_scope_id;
+}
+
+// 通用套接字
+#include <sys/socket.h>
+struct sockaddr {
+    uint8_t sa_len;
+    sa_family_t sa_family;
+    char sa_data[14];
+}
+
+// 新的通用套接字
+struct sockaddr_storage {
+    uint8_t ss_len;
+    sa_family_t ss_family;
+    ... /* enough large */
+}
+
+// 字符串转网络字节序的二进制值
+int inet_pton(int family, const char *strptr, void *addrptr)
+// 网络字节序的二进制值转字符串
+const char *inet_ntop(int family, const void *addrptr, char *strptr, size_t len) // where 'family' is AF_INET AF_INET6
+// 'len'的建议值
+#include <netinet/in.h>
+#define INET_ADDRSTRLEN 16
+#define INET6_ADDRSTRLEN 46
+```
+
+### 地址查询
+```c
+#include <netdb.h>
+// 获取主机信息
+struct hostent *gethostbyname(const char *name)
+void sethostent(int stayopen)
+// 关闭主机数据库文件
+void endhostent(void)
+struct hostent {
+    char  *h_name;            /* official name of host */
+    char **h_aliases;         /* alias list */
+    int    h_addrtype;        /* host address type */
+    int    h_length;          /* length of address */
+    char **h_addr_list;       /* list of addresses */
+}
+// 网络地址项相关操作
+struct netent *getnetent(void);
+struct netent *getnetbyname(const char *name);
+struct netent *getnetbyaddr(uint32_t net, int type);
+void setnetent(int stayopen);
+void endnetent(void);
+struct netent {
+    char      *n_name;     /* official network name */
+    char     **n_aliases;  /* alias list */
+    int        n_addrtype; /* net address type */
+    uint32_t   n_net;      /* network number */
+}
+// 协议项相关操作
+struct protoent *getprotoent(void);
+struct protoent *getprotobyname(const char *name);
+struct protoent *getprotobynumber(int proto);
+void setprotoent(int stayopen);
+void endprotoent(void);
+struct protoent {
+    char  *p_name;       /* official protocol name */
+    char **p_aliases;    /* alias list */
+    int    p_proto;      /* protocol number */
+}
+// 服务项相关操作
+struct servent *getservent(void);
+struct servent *getservbyname(const char *name, const char *proto);
+struct servent *getservbyport(int port, const char *proto);
+void setservent(int stayopen);
+void endservent(void);
+struct servent {
+    char  *s_name;       /* official service name */
+    char **s_aliases;    /* alias list */
+    int    s_port;       /* port number */
+    char  *s_proto;      /* protocol to use */
+}
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+// 将主机名和一个服务名映射到一个地址
+int getaddrinfo(const char *node, const char *service,
+               const struct addrinfo *hints,
+               struct addrinfo **res);
+// 释放addrinfo链表结构
+void freeaddrinfo(struct addrinfo *res);
+// 返回'getaddrinfo'错误消息
+const char *gai_strerror(int errcode);
+struct addrinfo {
+    int              ai_flags;
+    int              ai_family;
+    int              ai_socktype;
+    int              ai_protocol;
+    socklen_t        ai_addrlen;
+    struct sockaddr *ai_addr;
+    char            *ai_canonname;
+    struct addrinfo *ai_next;
+};
+// 将一个地址装换成一个主机名和一个服务名
+int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+               char *host, socklen_t hostlen,
+               char *serv, socklen_t servlen, int flags);
+```
+![APUE-addrinfo-ai_flags](http://www.rainbowch.net/resource/APUE-addrinfo-ai_flags.png)
+![APUE-getnameinfo-flags](http://www.rainbowch.net/resource/APUE-getnameinfo-flags.png)
+
+### 套接字与地址关联
+```c
+#include <sys/socket.h>
+// 将套接字与地址关联
+int bind(int sockfd, const struct sockaddr *addr, socklen_t len)
+// 获取绑定到套接字上的地址
+int getsockname(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict alenp)
+// 获得已连接套接字对等方的地址
+int getpeername(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict alenp)
+```
+
+### 建立链接
+```c
+// 建立连接
+#include <sys/socket.h>
+int connect(int sockfd, const struct sockaddr *addr, socklen_t len)
+// 服务器宣告愿意接受的连接请求数
+int listen(int sockfd, int backlog)
+// 获得连接请求并建立连接
+int accept(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict len) /* 返回与客户端相连的新的套接字 */
+```
