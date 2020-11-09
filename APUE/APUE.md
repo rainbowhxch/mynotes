@@ -1,4 +1,4 @@
-# APUE NOTE
+ze# APUE NOTE
 
 ## Preface
 我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，千万不要通过变量名猜测变量意图，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
@@ -1416,4 +1416,69 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t len)
 int listen(int sockfd, int backlog)
 // 获得连接请求并建立连接
 int accept(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict len) /* 返回与客户端相连的新的套接字 */
+```
+
+### 数据传输
+```c
+#include <sys/socket.h>
+// 在已连接的套接字上发送数据, 类似于'write'
+ssize_t send(int sockfd, const void *buf, size_t nbytes, int flags) */ 返回发送的字节数 */
+// 作用在无连接套接字上的'send'
+ssize_t sendto(int sockfd, const void *buf, size_t nbytes, int flags, const struct sockaddr *destaddr, socklen_t destlen)
+// 多重缓存区的'send'
+ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags)
+struct msghdr {
+    void         *msg_name;       /* Optional address */
+    socklen_t     msg_namelen;    /* Size of address */
+    struct iovec *msg_iov;        /* Scatter/gather array */
+    size_t        msg_iovlen;     /* # elements in msg_iov */
+    void         *msg_control;    /* Ancillary data, see below */
+    size_t        msg_controllen; /* Ancillary data buffer len */
+    int           msg_flags;      /* Flags on received message */
+};
+// 接受数据，与'read'类似
+ssize_t recv(int sockfd, void *buf, size_t nbytes, int flags) /* 返回数据的字节长度 */
+// 接受数据，并定位发送者
+ssize_t recvfrom(int sockfd, void *buf, size_t nbytes, int flags, struct sockaddr *restrict addr, socklen_t *restrict addrlen) /* 数据发送方的地址会存储到'addr'中 */
+// 多重缓存区的'recv'
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
+```
+![APUE-send-flags](http://www.rainbowch.net/resource/APUE-send-flags.png)
+![APUE-recv-flags](http://www.rainbowch.net/resource/APUE-recv-flags.png)
+![APUE-recvmsg-flags](http://www.rainbowch.net/resource/APUE-recvmsg-flags.png)
+
+### 套接字选项
+```c
+#include <sys/socket.h>
+// 设置套接字选项
+int setsockopt(int sockfd, int level, int option, const void *val, socklen_t len) /* 'level'是选项应用的协议 */
+int getsockopt(int sockfd, int level, int option, void *restrict val, socklen_t *restrict lenp) /* 'level'是选项应用的协议 */
+```
+![APUE-sockopt](http://www.rainbowch.net/resource/APUE-sockopt.png)
+
+### 带外数据(out-of-band data)
+```c
+// 设置套接字的所有权进程
+fcntl(scokfd, F_SETOWN, pid)
+// 获得套接字的所有权进程ID
+fcntl(scokfd, F_GETOWN, pid)
+// 判断下一个字节是否是紧急标志处
+#include <sys/socket.h>
+int sockatmark(int sockfd) /* 返回1:在标记处，返回0不在 */
+```
+
+## 高级进程间通信
+```c
+// 创建一对无名的互相连接的套接字
+#include <sys/socket.h>
+int socketpair(int domain, int type, int protocol, int sockfd[2])
+// 可使用'bind'函数为无名套接字绑定'S_IFSOCK'类型的文件, 此文件不会自动删除，需要手动解除链接
+#include <sys/un.h>
+struct sockaddr_un {
+    sa_family_t sun_family;    /* AF_UNIX */
+    char        sun_path[108]; /* pathname */
+}
+// 计算成员从结构体开始处的偏移量
+#include <stddef.h>
+#define offsetof(TYPE, MEMBER) ((int)&((TYPE *)0)->MEMBER)
 ```
