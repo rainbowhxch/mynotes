@@ -1482,3 +1482,44 @@ struct sockaddr_un {
 #include <stddef.h>
 #define offsetof(TYPE, MEMBER) ((int)&((TYPE *)0)->MEMBER)
 ```
+
+## 规范的命令行选项
+```c
+#include <unistd.h>
+// 获取命令行选项
+int getopt(int argc, char *const argv[], const char *options) /* 返回下一个选项字符，选项处理完返回-1, 遇到无效选项或缺少选项返回'?' */
+extern int optind, opterr, optopt
+extern char *optarg
+```
+![APUE-getopt-variable](http://www.rainbowch.net/resource/APUE-getopt-variable.png)
+
+## 终端I/O
+```c
+#include <termios.h>
+struct termios {
+    tcflag_t c_iflag;      /* input modes */
+    tcflag_t c_oflag;      /* output modes */
+    tcflag_t c_cflag;      /* control modes */
+    tcflag_t c_lflag;      /* local modes */
+    cc_t     c_cc[NCCS];   /* special characters */
+}
+int tcgetattr(int fd, struct termios *termios_p);
+int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
+int tcsendbreak(int fd, int duration);
+int tcdrain(int fd);
+int tcflush(int fd, int queue_selector);
+int tcflow(int fd, int action);
+void cfmakeraw(struct termios *termios_p);
+speed_t cfgetispeed(const struct termios *termios_p);
+speed_t cfgetospeed(const struct termios *termios_p);
+int cfsetispeed(struct termios *termios_p, speed_t speed);
+int cfsetospeed(struct termios *termios_p, speed_t speed);
+int cfsetspeed(struct termios *termios_p, speed_t speed);
+```
+![APUE-termios-c_cflag](http://www.rainbowch.net/resource/APUE-termios-c_cflag.png)
+![APUE-termios-c_iflag](http://www.rainbowch.net/resource/APUE-termios-c_iflag.png)
+![APUE-termios-c_lflag](http://www.rainbowch.net/resource/APUE-termios-c_lflag.png)
+![APUE-termios-c_oflag](http://www.rainbowch.net/resource/APUE-termios-c_oflag.png)
+![APUE-termios-functions](http://www.rainbowch.net/resource/APUE-termios-functions.png)
+![APUE-termios-special-characters1](http://www.rainbowch.net/resource/APUE-termios-special-characters1.png)
+![APUE-termios-special-characters2](http://www.rainbowch.net/resource/APUE-termios-special-characters2.png)
