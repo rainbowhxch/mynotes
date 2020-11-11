@@ -1,4 +1,4 @@
-ze# APUE NOTE
+# APUE NOTE
 
 ## Preface
 我认为这种类型的书籍还是应该把重心放在Coding上面，所以本文还是只提供API的笔记，千万不要通过变量名猜测变量意图，如果读者有疑惑的话，建议直接查看书籍原文(原文写的很棒)，或通过搜索引擎查阅相关资料。
@@ -1503,18 +1503,55 @@ struct termios {
     tcflag_t c_lflag;      /* local modes */
     cc_t     c_cc[NCCS];   /* special characters */
 }
+
+/* --- 终端属性函数 --- */
+// 获取终端选项标志和特殊字符
 int tcgetattr(int fd, struct termios *termios_p);
-int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
-int tcsendbreak(int fd, int duration);
+// 修改终端选项标志和特殊字符
+int tcsetattr(int fd, int optional_actions, const struct termios *termios_p); /* 'optional_actions'指定什么时候新的终端属性才起作用 */
+/* ------------------- */
+
+/* --- 行控制函数 --- */
+// 等待所有输出都被传递
 int tcdrain(int fd);
-int tcflush(int fd, int queue_selector);
-int tcflow(int fd, int action);
+冲洗输入缓冲区或输出缓冲区
+int tcflush(int fd, int queue_selector); /* 'queue_selector'为'TCIFLUSH':冲洗输入对流，'TCOFLUSH':冲洗输出队列，'TCIOFLUSH':冲洗输入输出队列 */
+// 控制输入和输出流
+int tcflow(int fd, int action); /* 'action'为'TCOOFF':输出被挂起, 'TCOON':重新启动以前挂起的输出, 'TCIOFF':系统发送一个'STOP'字符使终端设备停止发送数据, 'TCION':系统发送一个'START'字符使终端设备恢复发送数据 */
+// 在指定时间区间内发送给连续的0值位流
+int tcsendbreak(int fd, int duration);
+/* ------------------ */
+
+/* --- 波特率函数 --- */
 void cfmakeraw(struct termios *termios_p);
-speed_t cfgetispeed(const struct termios *termios_p);
-speed_t cfgetospeed(const struct termios *termios_p);
-int cfsetispeed(struct termios *termios_p, speed_t speed);
-int cfsetospeed(struct termios *termios_p, speed_t speed);
+// 获得终端设备的输入波特率
+speed_t cfgetispeed(const struct termios *termios_p); /* 返回值：波特率值 */
+// 获得终端设备的输出波特率
+speed_t cfgetospeed(const struct termios *termios_p); /* 返回值：波特率值 */
+// 设置终端设备的输入波特率
+int cfsetispeed(struct termios *termios_p, speed_t speed); /* 只影响'termios'结构，调用后仍需调用'tcsetattr'才会影响到终端设备 */
+// 设置终端设备的输出波特率
+int cfsetospeed(struct termios *termios_p, speed_t speed); /* 只影响'termios'结构，调用后仍需调用'tcsetattr'才会影响到终端设备 */
 int cfsetspeed(struct termios *termios_p, speed_t speed);
+/* ------------------ */
+
+// 获取控制终端的名字
+#include <stdio.h>
+char *ctermid(char *ptr) /* 若'ptr'不为空，应指向长度至少为'L_ctermid'字节的数组 */
+// 判断文件描述符是否引用一个终端设备
+#include <unistd.h>
+int isatty(int fd)
+// 返回在文件描述符上打开的终端设备的路径名
+char *ttyname(int fd)
+
+// 终端窗口大小
+*/ 可以使用'ioctl'的'TIOCGWINSZ'命令获取或修改此结构, 修改后的新值若于当前值不同前台进程组会收到'SIGWINCH'信号 */
+struct winsize {
+    unsigned short ws_row;
+    unsigned short ws_col;
+    unsigned short ws_xpixel;   /* unused */
+    unsigned short ws_ypixel;   /* unused */
+};
 ```
 ![APUE-termios-c_cflag](http://www.rainbowch.net/resource/APUE-termios-c_cflag.png)
 ![APUE-termios-c_iflag](http://www.rainbowch.net/resource/APUE-termios-c_iflag.png)
@@ -1523,3 +1560,11 @@ int cfsetspeed(struct termios *termios_p, speed_t speed);
 ![APUE-termios-functions](http://www.rainbowch.net/resource/APUE-termios-functions.png)
 ![APUE-termios-special-characters1](http://www.rainbowch.net/resource/APUE-termios-special-characters1.png)
 ![APUE-termios-special-characters2](http://www.rainbowch.net/resource/APUE-termios-special-characters2.png)
+![APUE-tcsetattr-opt](http://www.rainbowch.net/resource/APUE-txsetattr-opt.png)
+![APUE-termios-flags1](http://www.rainbowch.net/resource/APUE-termios-flags1.png)
+![APUE-termios-flags2](http://www.rainbowch.net/resource/APUE-termios-flags2.png)
+![APUE-termios-flags3](http://www.rainbowch.net/resource/APUE-termios-flags3.png)
+![APUE-termios-flags4](http://www.rainbowch.net/resource/APUE-termios-flags4.png)
+![APUE-termios-flags5](http://www.rainbowch.net/resource/APUE-termios-flags5.png)
+![APUE-termios-flags6](http://www.rainbowch.net/resource/APUE-termios-flags6.png)
+![APUE-terminal-nonstandard-MIN-TIME](http://www.rainbowch.net/resource/APUE-terminal-nonstandard-MIN-TIME.png)
