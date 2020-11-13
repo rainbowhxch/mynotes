@@ -1407,7 +1407,7 @@ int getsockname(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict 
 int getpeername(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict alenp)
 ```
 
-### 建立链接
+### 建立连接
 ```c
 // 建立连接
 #include <sys/socket.h>
@@ -1568,3 +1568,17 @@ struct winsize {
 ![APUE-termios-flags5](http://www.rainbowch.net/resource/APUE-termios-flags5.png)
 ![APUE-termios-flags6](http://www.rainbowch.net/resource/APUE-termios-flags6.png)
 ![APUE-terminal-nonstandard-MIN-TIME](http://www.rainbowch.net/resource/APUE-terminal-nonstandard-MIN-TIME.png)
+
+## 伪终端
+```c
+#include<stdlib.h>
+#include<fcntl.h>
+// 打开下一个可用的伪终端注射被
+int posix_openpt(int oflag) /* 'oflag'类似于'open'的'oflag'，返回下一个可用的PTY主设备文件描述符 */
+// 设置从设备节点的用户ID为调用者的实际用户ID，权限设置为0620
+int grantpt(int fd)
+// 用于准予对伪终端从设备的访问
+int unlockpt(int fd)
+// 返回伪终端从设备的路径名
+char *ptsname(int fd)
+```
