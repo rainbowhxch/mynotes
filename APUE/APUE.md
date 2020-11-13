@@ -1582,3 +1582,6 @@ int unlockpt(int fd)
 // 返回伪终端从设备的路径名
 char *ptsname(int fd)
 ```
+
+## Epilogue
+至此，APUE这本书的笔记就完结了，希望你能从中收获许多。
