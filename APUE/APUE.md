@@ -1573,7 +1573,7 @@ struct winsize {
 ```c
 #include<stdlib.h>
 #include<fcntl.h>
-// 打开下一个可用的伪终端注射被
+// 打开下一个可用的伪终端主设备
 int posix_openpt(int oflag) /* 'oflag'类似于'open'的'oflag'，返回下一个可用的PTY主设备文件描述符 */
 // 设置从设备节点的用户ID为调用者的实际用户ID，权限设置为0620
 int grantpt(int fd)
